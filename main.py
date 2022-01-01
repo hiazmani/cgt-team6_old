@@ -63,7 +63,6 @@ for step in range(n_steps):
     
     for agentKey, agentObject in A2C_agents.items():
         next_state = next_states[agentKey]["curr_obs"]
-        # print("stateshape:",next_state.shape)
         next_state = np.reshape(next_state, [1, 15, 15, 3])
         state = states[agentKey]["curr_obs"]
         state = np.reshape(state, [1, 15, 15, 3])
@@ -72,7 +71,9 @@ for step in range(n_steps):
         done = dones[agentKey]
         action = curr_actions[agentKey]
         agentObject.train_model(state, action, reward, next_state, done)
+
+    # env.render(f"images/{str(step).zfill(10)}.png")
     
 
 
-    print("collective rewards: ", collective_reward[step])
+    print(f"[{step}] Collective rewards: ", collective_reward[step])

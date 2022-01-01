@@ -8,6 +8,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import LSTM
+
 
 ##https://github.com/rlcode/reinforcement-learning/blob/master/2-cartpole/4-actor-critic/cartpole_a2c.py
 
@@ -40,9 +42,9 @@ class A2CAgent:
         actor = Sequential()
         actor.add(Conv2D(64, (15, 15), activation='relu', input_shape=(15, 15, 3)))
         actor.add(Flatten())
-        actor.add(Dense(24, activation='relu', kernel_initializer='he_uniform'))
-        actor.add(Dense(self.action_size, activation='softmax',
-                        kernel_initializer='he_uniform'))
+        actor.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        actor.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        actor.add(Dense(self.action_size, activation="softmax"))
         actor.summary()
         # See note regarding crossentropy in cartpole_reinforce.py
         actor.compile(loss='categorical_crossentropy',
@@ -54,9 +56,9 @@ class A2CAgent:
         critic = Sequential()
         critic.add(Conv2D(64, (15, 15), activation='relu', input_shape=( 15, 15, 3)))
         critic.add(Flatten())
-        critic.add(Dense(24, activation='relu', kernel_initializer='he_uniform'))
-        critic.add(Dense(self.value_size, activation='linear',
-                         kernel_initializer='he_uniform'))
+        critic.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        critic.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        critic.add(Dense(self.value_size, activation="softmax"))
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic

@@ -15,6 +15,10 @@ def make_video_from_image_dir(vid_path, img_folder, video_name="trajectory", fps
     Create a video from a directory of images
     """
     images = [img for img in os.listdir(img_folder) if img.endswith(".png")]
+    # for x in images:
+        # print(os.path.join("/home/liguedino/Documents/github/project_comp_game_theory/images/", x))
+        # os.rename(os.path.join("/home/liguedino/Documents/github/project_comp_game_theory/images/", x), os.path.join("/home/liguedino/Documents/github/project_comp_game_theory/images/", x.zfill(10)))
+    # print(images)
     images.sort()
 
     rgb_imgs = []
@@ -46,6 +50,8 @@ def make_video_from_rgb_imgs(
     fourcc = cv2.VideoWriter_fourcc(*format)
     video = cv2.VideoWriter(video_path, fourcc, float(fps), (width, height))
 
+    print(f"path: {video_path}")
+
     for i, image in enumerate(rgb_arrs):
         percent_done = int((i / len(rgb_arrs)) * 100)
         if percent_done % 20 == 0:
@@ -54,6 +60,7 @@ def make_video_from_rgb_imgs(
         image = cv2.resize(image, resize, interpolation=cv2.INTER_NEAREST)
         video.write(image)
 
+    print("video released")
     video.release()
 
 

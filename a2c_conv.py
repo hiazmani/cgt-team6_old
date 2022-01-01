@@ -38,7 +38,7 @@ class A2CAgent:
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Conv2D(64, (210, 160), activation='relu', input_shape=(210, 160, 3)))
+        actor.add(Conv2D(64, (15, 15), activation='relu', input_shape=(15, 15, 3)))
         actor.add(Flatten())
         actor.add(Dense(24, activation='relu', kernel_initializer='he_uniform'))
         actor.add(Dense(self.action_size, activation='softmax',
@@ -52,7 +52,7 @@ class A2CAgent:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Conv2D(64, (210, 160), activation='relu', input_shape=( 210, 160, 3)))
+        critic.add(Conv2D(64, (15, 15), activation='relu', input_shape=( 15, 15, 3)))
         critic.add(Flatten())
         critic.add(Dense(24, activation='relu', kernel_initializer='he_uniform'))
         critic.add(Dense(self.value_size, activation='linear',
@@ -102,6 +102,8 @@ if __name__ == "__main__":
         done = False
         score = 0
         state = env.reset()
+        print("stateshape:",state.shape)
+        # print(f"state: {state}")
         state = np.reshape(state, [1, 210, 160, 3])
 
         #state = np.reshape(state, [1, state_size])

@@ -1,4 +1,6 @@
 numpy
 opencv-python
 matplotlib
-gym
+tensorflow
+gym[all]
+gym[atari,accept-rom-license]

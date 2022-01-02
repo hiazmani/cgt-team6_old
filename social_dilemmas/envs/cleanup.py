@@ -12,16 +12,16 @@ _CLEANUP_ACTIONS = {"FIRE": 5, "CLEAN": 5}  # length of firing beam, length of c
 # Custom colour dictionary
 CLEANUP_COLORS = {
     b"C": np.array([100, 255, 255], dtype=np.uint8),  # Cyan cleaning beam
-    b"S": np.array([113, 75, 24], dtype=np.uint8),  # Light grey-blue stream cell
-    b"H": np.array([99, 156, 194], dtype=np.uint8),  # Brown waste cells
-    b"R": np.array([113, 75, 24], dtype=np.uint8),  # Light grey-blue river cell
-}
+    b"S": np.array([99, 156, 194], dtype=np.uint8),  # Light grey-blue stream cell
+    b"H": np.array([113, 75, 24], dtype=np.uint8),  # Brown waste cells
+    b"R": np.array([99, 156, 194], dtype=np.uint8),  # Light grey-blue river cell
+} 
 
 SPAWN_PROB = [0, 0.005, 0.02, 0.05]
 
 CLEANUP_VIEW_SIZE = 7
 
-thresholdDepletion = 0.4
+thresholdDepletion =  0.4
 thresholdRestoration = 0.0
 wasteSpawnProbability = 0.5
 appleRespawnProbability = 0.05

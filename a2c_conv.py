@@ -9,6 +9,12 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Bidirectional
+
+
+# gpu_devices = tensorflow.config.experimental.list_physical_devices('GPU')
+# for device in gpu_devices:
+#     tensorflow.config.experimental.set_memory_growth(device, True)
 
 
 ##https://github.com/rlcode/reinforcement-learning/blob/master/2-cartpole/4-actor-critic/cartpole_a2c.py
@@ -40,10 +46,11 @@ class A2CAgent:
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Conv2D(64, (15, 15), activation='relu', input_shape=(15, 15, 3)))
+        actor.add(Conv2D(64, (15, 15), activation='relu', input_shape=(5, 15, 15, 3)))
         actor.add(Flatten())
-        actor.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-        actor.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+        actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+        # actor.add(Bidirectional(LSTM(128, return_sequences=True)))
         actor.add(Dense(self.action_size, activation="softmax"))
         actor.summary()
         # See note regarding crossentropy in cartpole_reinforce.py
@@ -54,10 +61,11 @@ class A2CAgent:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Conv2D(64, (15, 15), activation='relu', input_shape=( 15, 15, 3)))
+        critic.add(Conv2D(64, (15, 15), activation='relu', input_shape=(5, 15, 15, 3)))
         critic.add(Flatten())
-        critic.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-        critic.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+        critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+        # critic.add(Bidirectional(LSTM(128, return_sequences=True)))
         critic.add(Dense(self.value_size, activation="softmax"))
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))

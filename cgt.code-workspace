@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "../declarative_programming_5"
+		},
+		{
+			"path": "."
 		}
 	],
 	"settings": {

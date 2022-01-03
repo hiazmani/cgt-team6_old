@@ -51,14 +51,41 @@ CLEANUP_MAP = [
     "@@@@@@@@@@@@@@@@@@",
 ]
 
+TRAPPED_BOX_MAP = [
+    "@@@@@@@@@@@@@@@@@",
+    "@               @",
+    "@  AA     @@@   @",
+    "@  AA     @P@   @",
+    "@         @@@   @",
+    "@  P       AA   @",
+    "@          AA   @",
+    "@  AA           @",
+    "@  AA           @",
+    "@               @",
+    "@@@@@@@@@@@@@@@@@",
+]
+
+TRAPPED_BOX_MAP = [
+    "@@@@@@@@@@@@@@@@@",
+    "@               @",
+    "@               @",
+    "@               @",
+    "@               @",
+    "@       AA      @",
+    "@       AA      @",
+    "@               @",
+    "@       PP      @",
+    "@               @",
+    "@@@@@@@@@@@@@@@@@",
+]
 
 # 'S' means turned-on switch
 # 's' means turned-off switch
 # 'D' means closed door
 # 'd' means opened door
 class SwitchMapElements:
-    top_row = "@@@D@@@"
-    empty_row = "@     @"
-    one_switch_row = "@s    @"
-    two_switch_row = "@s   s@"
-    bottom_row = "@@@@@@@"
+    top_row =           "@@@D@@@"
+    empty_row =         "@     @"
+    one_switch_row =    "@s    @"
+    two_switch_row =    "@s   s@"
+    bottom_row =        "@@@@@@@"

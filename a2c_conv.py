@@ -42,11 +42,15 @@ class A2CAgent:
         self.actor = self.build_actor()
         self.critic = self.build_critic()
 
+        # if self.load_model:
+        #     self.actor.load_weights("./model/a2c_actor.h5")
+        #     self.critic.load_weights("./model/a2c_critic.h5")
+
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Conv2D(64, (15, 15), activation='relu', input_shape=(5, 15, 15, 3)))
+        actor.add(Conv2D(64, (3, 3), activation='relu', input_shape=(2, 15, 15, 3)))
         actor.add(Flatten())
         actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
         actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
@@ -61,7 +65,7 @@ class A2CAgent:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Conv2D(64, (15, 15), activation='relu', input_shape=(5, 15, 15, 3)))
+        critic.add(Conv2D(64, (3, 3), activation='relu', input_shape=(2, 15, 15, 3)))
         critic.add(Flatten())
         critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
         critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
@@ -112,7 +116,7 @@ if __name__ == "__main__":
         done = False
         score = 0
         state = env.reset()
-        print("stateshape:",state.shape)
+        # print("stateshape:",state.shape)
         # print(f"state: {state}")
         state = np.reshape(state, [1, 210, 160, 3])
 

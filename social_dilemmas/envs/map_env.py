@@ -721,9 +721,7 @@ class MapEnv():
                 covers that cell and stops
             (3) If a beam hits a cell whose character is in cell_types, it replaces it with
                 the corresponding index in update_char
-            (4) As per the rules, the beams fire from in front of the agent and on its
-                sides so the beam that starts in front of the agent travels out one
-                cell further than it does along the sides.
+            (4) [3, 11,''],
             (5) This method updates the beam_pos, an internal representation of how
                 which cells need to be rendered with fire_char in the agent view
 

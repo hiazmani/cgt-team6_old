@@ -9,16 +9,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from a2c_conv import *
+import pandas as pd
 
 from collections import deque
 
-from social_dilemmas.envs.trapped_box import TrappedBoxEnv
+from social_dilemmas.envs.trapped_box import AppleLearningEnv
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 # Parameters from social influences paper
 gamma = 0.99
-n_agents = 2
-n_actions = len(TRAPPED_ACTIONS)  # amount of actions
+n_agents = 1
+n_actions = len(BASE_ACTIONS)  # amount of actions
 #{0: 'MOVE_LEFT', 1: 'MOVE_RIGHT', 2: 'MOVE_UP', 3: 'MOVE_DOWN', 4: 'STAY', 5: 'TURN_CLOCKWISE', 6: 'TURN_COUNTERCLOCKWISE', 7: 'FIRE', 8: 'CLEAN'}
 kernel_size = 3
 strides=(1, 1)
@@ -26,7 +29,7 @@ n_output_conv = 6
 n_dense_layers = 32
 n_lstm = 128
 
-env = TrappedBoxEnv(num_agents=n_agents)
+env = AppleLearningEnv(num_agents=n_agents)
 env.setup_agents()
 
 agents = env.agents
@@ -59,12 +62,12 @@ for agentKey in A2C_agents.keys():
     #print(f"F {state.shape}")
     queue = deque()
     queue.extendleft([state])
-    queue.extendleft([state])
+    # queue.extendleft([state])
     #[print(x.shape) for x in queue]
     agentQueus[agentKey] = queue
 
 
-n_steps = int(3.0 * 1e5)
+n_steps = int(12000)
 #print(n_steps)
 collective_reward = np.zeros(n_steps)
 
@@ -86,9 +89,7 @@ for f in files:
 ## Training loop ##
 ##---------------##
 
-# juiste_dict = {'agent-1': 7, 'agent-0': 1}
 
-# env.step(juiste_dict)
 totaller=0
 for step in range(n_steps):
     curr_actions = {}
@@ -101,7 +102,7 @@ for step in range(n_steps):
         queue = agentQueus[agentKey]
         allstates = tf.concat([x for x in queue], 0)
         
-        allstates = np.reshape(allstates, [1, 2, 15, 15, 3])
+        allstates = np.reshape(allstates, [1, 1, 15, 15, 3])
         action = agentObject.get_action(allstates)
         # print(action)
         curr_actions[agentKey] = action
@@ -118,24 +119,30 @@ for step in range(n_steps):
 
         queue = agentQueus[agentKey]
         prev_states = tf.concat([x for x in queue], 0)
-        prev_states = np.reshape(prev_states, [1, 2, 15, 15, 3])
+        prev_states = np.reshape(prev_states, [1, 1, 15, 15, 3])
         queue.pop()
         queue.extendleft([next_state])
         allstates = tf.concat([x for x in queue], 0)
-        allstates = np.reshape(allstates, [1, 2, 15, 15, 3])
+        allstates = np.reshape(allstates, [1, 1, 15, 15, 3])
 
         agentObject.train_model(prev_states, action, reward, allstates, done)
 
-    # env.render(f"images/{str(step).zfill(10)}.png")
-    if step % 100 == 0:
-        env.reset()
+    env.render(f"images/{str(step).zfill(10)}.png")
+    # if step % 100 == 0:
+        # env.reset()
         
-        print(f"we're killing everyone ezzzzzz {totaller}")
-        totaller += 1
+        # totaller += 1
  
     
 
 
     print(f"[{step}] Collective rewards: ", collective_reward[step])
+
+d = {'Episodes': np.array(range(len(collective_reward))), 'Rewards': collective_reward}
+df = pd.DataFrame(d)
+df.to_csv('trappedBox12k.csv', index=False)
+
+print(f"Finished 12.000 episodes")
+print(f"All rewards: {collective_reward}")
 
 

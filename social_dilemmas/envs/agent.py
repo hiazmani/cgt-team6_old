@@ -336,3 +336,39 @@ class FreeAgent(Agent):
             return b" "
         else:
             return char
+
+##------------##
+## Free Agent ##
+##------------##
+
+APPLE_ACTIONS = BASE_ACTIONS.copy()
+
+
+class AppleAgent(Agent):
+    def __init__(self, agent_id, start_pos, start_orientation, full_map, view_len):
+        self.view_len = view_len
+        super().__init__(agent_id, start_pos, start_orientation, full_map, view_len, view_len)
+        # remember what you've stepped on
+        self.update_agent_pos(start_pos)
+        self.update_agent_rot(start_orientation)
+
+    # Ugh, this is gross, this leads to the actions basically being
+    # defined in two places
+    def action_map(self, action_number):
+        """Maps action_number to a desired action in the map"""
+        return APPLE_ACTIONS[action_number]
+
+    def get_done(self):
+        return False
+
+    def hit(self, char):
+        if char == b"F":
+            self.reward_this_turn -= 50
+
+    def consume(self, char):
+        """Defines how an agent interacts with the char it is standing on"""
+        if char == b"A":
+            self.reward_this_turn += 1
+            return b" "
+        else:
+            return char

@@ -119,8 +119,8 @@ if __name__ == "__main__":
                 score = score if score == 500.0 else score + 100
                 scores.append(score)
                 episodes.append(e)
-                pylab.plot(episodes, scores, 'b')
-                pylab.savefig("./save_graph/cartpole_a2c.png")
+                # pylab.plot(episodes, scores, 'b')
+                # pylab.savefig("./save_graph/cartpole_a2c.png")
                 print("episode:", e, "  score:", score)
 
                 # if the mean of scores of last 10 episode is bigger than 490

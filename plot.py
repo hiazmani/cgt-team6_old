@@ -2,12 +2,12 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("./results/old_results/trappedBox12k.csv")
+df = pd.read_csv("./trappedBox12k_length.csv")
 
 window = 10
 
 episodes = df['Episodes'].to_numpy()
-rewards = df['Rewards'].to_numpy()
+rewards = df['AmountOfSteps'].to_numpy()
 print(episodes)
 # rewards = df.y
 x_as = []

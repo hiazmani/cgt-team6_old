@@ -271,7 +271,7 @@ class SwitchAgent(Agent):
 ##-------------##
 
 TRAPPED_ACTIONS = BASE_ACTIONS.copy()
-TRAPPED_ACTIONS.update({7: "FREE"})
+TRAPPED_ACTIONS.update({5: "FREE"})
 
 class TrappedAgent(Agent):
     def __init__(self, agent_id, start_pos, start_orientation, full_map, view_len):

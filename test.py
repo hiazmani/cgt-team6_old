@@ -75,7 +75,7 @@ for i in range(1):
     obs, rewards, dones, infos = env.step({"agent-1": 4})
     kleene = obs["agent-1"]["curr_obs"]
     print_kleene(kleene)
-    print("\n\n") #na alex is den dummy :'(
+    print("\n\n")
  
 
 

@@ -41,7 +41,7 @@ state_size = None
 A2C_agents = {}
 
 for agentKey in agents.keys():
-    A2C_agents[agentKey] = A2CAgent(state_size, n_actions, 0.0001, 0.0005) 
+    A2C_agents[agentKey] = A2CAgent(state_size, n_actions, 0.001, 0.005, gamma) 
 print("All agents(A2C)", agents)
 
 #print(agents.items())
@@ -77,7 +77,7 @@ import glob
 
 
 totaller=0
-n_episodes = 500
+n_episodes = 100000
 n_steps = int(100)
 episode_rewards = np.zeros(n_episodes)
 episode_length = np.zeros(n_episodes)
@@ -138,7 +138,7 @@ for episode in range(n_episodes):
             allstates = tf.concat([x for x in queue], 0)
             allstates = np.reshape(allstates, [1, 1, 15, 15, 3])
 
-            agentObject.train_model(step, prev_states, action, reward, allstates, done)
+            agentObject.train_model(prev_states, action, reward, allstates, done)
 
     episode_length[episode] = step
     episode_rewards[episode] = cum_rew
@@ -147,11 +147,10 @@ for episode in range(n_episodes):
     # for agentKey, agentObject in A2C_agents.items():
     #     agentObject.save()   
 
-
-
-d = {'Episodes': np.array(range(len(episode_rewards))), "AmountOfSteps": episode_length, 'Rewards': episode_rewards}
-df = pd.DataFrame(d)
-df.to_csv('trappedBoxTest.csv', index=False)
+    if (episode % 10) == 0:
+        d = {'Episodes': np.array(range(len(episode_rewards))), "AmountOfSteps": episode_length, 'Rewards': episode_rewards}
+        df = pd.DataFrame(d)
+        df.to_csv('trappedBoxTest.csv', index=False)
 
 print(f"Finished 12.000 episodes")
 print(f"All rewards: {episode_rewards}")

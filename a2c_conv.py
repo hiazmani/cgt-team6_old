@@ -25,7 +25,7 @@ EPISODES = 1000
 
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2CAgent:
-    def __init__(self, observation_size, action_size, actor_lr, critic_lr, gamma saved_weights_dir = None):
+    def __init__(self, observation_size, action_size, actor_lr, critic_lr, gamma, saved_weights_dir = None):
         # get size of state and action
         self.observation_size = observation_size
         self.action_size = action_size

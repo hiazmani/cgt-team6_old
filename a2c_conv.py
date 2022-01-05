@@ -10,6 +10,7 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Bidirectional
+import os
 
 
 # gpu_devices = tensorflow.config.experimental.list_physical_devices('GPU')
@@ -24,37 +25,34 @@ EPISODES = 1000
 
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2CAgent:
-    def __init__(self, state_size, action_size):
-        # if you want to see Cartpole learning, then change to True
-        self.render = False
-        self.load_model = False
+    def __init__(self, observation_size, action_size, actor_lr, critic_lr, saved_weights_dir = None):
         # get size of state and action
-        self.state_size = state_size
+        self.observation_size = observation_size
         self.action_size = action_size
         self.value_size = 1
 
         # These are hyper parameters for the Policy Gradient
-        self.discount_factor = 0.99
-        self.actor_lr = 0.0001 #0.001
-        self.critic_lr = 0.0001 #0.005
+        self.discount_factor = 0.99999
+        self.actor_lr = actor_lr #0.001
+        self.critic_lr = critic_lr #0.005
 
         # create model for policy network
         self.actor = self.build_actor()
         self.critic = self.build_critic()
 
-        # if self.load_model:
-            # self.actor.load_weights("./model/a2c_actor.h5")
-            # self.critic.load_weights("./model/a2c_critic.h5")
+        # if saved_weights_dir and os.listdir(saved_weights_dir) != []:
+        #     self.actor.load_weights(f"./{saved_weights_dir}/a2c_actor.h5")
+        #     self.critic.load_weights(f"./{saved_weights_dir}/a2c_critic.h5")
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Conv2D(64, (3, 3), activation='relu', input_shape=(1, 15, 15, 3)))
+        actor.add(Conv2D(6, (3, 3), activation='linear', strides=(1, 1), input_shape=(1, 15, 15, 3)))
         actor.add(Flatten())
-        actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
-        actor.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
-        # actor.add(Bidirectional(LSTM(128, return_sequences=True)))
+        actor.add(Dense(32, activation='linear', kernel_initializer='he_uniform'))
+        actor.add(Dense(32, activation='linear', kernel_initializer='he_uniform'))
+        # actor.add(LSTM(128, input_shape=(1, 64), return_sequences=True))
         actor.add(Dense(self.action_size, activation="softmax"))
         actor.summary()
         # See note regarding crossentropy in cartpole_reinforce.py
@@ -65,10 +63,10 @@ class A2CAgent:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Conv2D(64, (3, 3), activation='relu', input_shape=(1, 15, 15, 3)))
+        critic.add(Conv2D(6, (3, 3), activation='linear', strides=(1, 1), input_shape=(1, 15, 15, 3)))
         critic.add(Flatten())
-        critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
-        critic.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+        critic.add(Dense(32, activation='linear', kernel_initializer='he_uniform'))
+        critic.add(Dense(32, activation='linear', kernel_initializer='he_uniform'))
         # critic.add(Bidirectional(LSTM(128, return_sequences=True)))
         critic.add(Dense(self.value_size, activation="softmax"))
         critic.summary()
@@ -77,6 +75,7 @@ class A2CAgent:
 
     # using the output of policy network, pick action stochastically
     def get_action(self, state):
+        # Predict the policy (probability of each action)
         policy = self.actor.predict(state, batch_size=1).flatten()
         return np.random.choice(self.action_size, 1, p=policy)[0]
 
@@ -98,17 +97,21 @@ class A2CAgent:
         self.actor.fit(state, advantages, epochs=1, verbose=0)
         self.critic.fit(state, target, epochs=1, verbose=0)
 
+    def save(self):
+        self.actor.save_weights("./model/a2c_actor.h5")
+        self.critic.save_weights("./model/a2c_critic.h5")
+
 
 if __name__ == "__main__":
     # In case of CartPole-v1, maximum length of episode is 500
     env = gym.make('Pong-v0')
     # get size of state and action from environment
-    state_size = env.observation_space.shape
-    # print(f"state: {state_size}")
+    observation_size = env.observation_space.shape
+    # print(f"state: {observation_size}")
     action_size = env.action_space.n
     
     # make A2C agent
-    agent = A2CAgent(state_size, action_size)
+    agent = A2CAgent(observation_size, action_size)
 
     scores, episodes = [], []
 
@@ -120,7 +123,7 @@ if __name__ == "__main__":
         # print(f"state: {state}")
         state = np.reshape(state, [1, 210, 160, 3])
 
-        #state = np.reshape(state, [1, state_size])
+        #state = np.reshape(state, [1, observation_size])
 
         while not done:
             # if agent.render:
@@ -129,7 +132,7 @@ if __name__ == "__main__":
             action = agent.get_action(state)
             next_state, reward, done, info = env.step(action)
             next_state = np.reshape(next_state, [1, 210, 160, 3])
-            #next_state = np.reshape(next_state, [1, state_size])
+            #next_state = np.reshape(next_state, [1, observation_size])
             # if an action make the episode end, then gives penalty of -100
             # reward = reward if not done or score == 499 else -100
             # print(f"reward: {reward}")
@@ -146,8 +149,6 @@ if __name__ == "__main__":
                 # score = score if score == 500.0 else score + 100
                 scores.append(score)
                 episodes.append(e)
-                # pylab.plot(episodes, scores, 'b')
-                # pylab.savefig("./save_graph/cartpole_a2c.png")
                 print("episode:", e, "  score:", score)
 
                 # if the mean of scores of last 10 episode is bigger than 490

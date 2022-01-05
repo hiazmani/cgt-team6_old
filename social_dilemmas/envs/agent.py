@@ -300,7 +300,7 @@ class TrappedAgent(Agent):
     def consume(self, char):
         """Defines how an agent interacts with the char it is standing on"""
         if char == b"A":
-            self.reward_this_turn += 50
+            self.reward_this_turn += 1
             return b" "
         else:
             return char
@@ -332,7 +332,7 @@ class FreeAgent(Agent):
     def consume(self, char):
         """Defines how an agent interacts with the char it is standing on"""
         if char == b"A":
-            self.reward_this_turn += 50
+            self.reward_this_turn += 1
             return b" "
         else:
             return char

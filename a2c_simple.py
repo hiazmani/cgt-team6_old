@@ -25,8 +25,8 @@ class A2CAgent:
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
-        self.actor_lr = 0.001
-        self.critic_lr = 0.005
+        self.actor_lr = 0.0001
+        self.critic_lr = 0.0005
 
         # create model for policy network
         self.actor = self.build_actor()
@@ -83,7 +83,7 @@ class A2CAgent:
 
 if __name__ == "__main__":
     # In case of CartPole-v1, maximum length of episode is 500
-    env = gym.make('CartPole-v1')
+    env = gym.make('CartPole-v0')
     # get size of state and action from environment
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n

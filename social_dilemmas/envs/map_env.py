@@ -1,8 +1,10 @@
 """Base map class that defines the rendering process
 """
-
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.random import rand
+
 from gym.spaces import Box, Dict
 
 
@@ -289,6 +291,457 @@ class MapEnv():
 
         dones["__all__"] = np.any(list(dones.values()))
         return observations, rewards, dones, infos
+
+
+    ##################################################################################################################################################################
+    
+    def dummy_step(self, actions):
+        """Takes in a dict of actions and converts them to a map update
+
+        Parameters
+        ----------
+        actions: dict {agent-id: int}
+            dict of actions, keyed by agent-id that are passed to the agent. The agent
+            interprets the int and converts it to a command
+
+        Returns
+        -------
+        observations: dict of arrays representing agent observations
+        rewards: dict of rewards for each agent
+        dones: dict indicating whether each agent is done
+        info: dict to pass extra info to gym
+        """
+        
+        # my_beam_pos = []
+        # myagents = copy.deepcopy(self.agents)
+        # my_world_map = copy.deepcopy(self.world_map)
+        # my_world_map_color = copy.deepcopy(self.world_map_color)
+
+
+        self.beam_pos = []
+        my_beam_pos = self.beam_pos
+        myagents = self.agents
+        my_world_map = self.world_map
+        my_world_map_color = self.world_map_color
+
+        agent_actions = {}
+        for agent_id, action in actions.items():
+            agent_action = myagents[agent_id].action_map(action)
+            agent_actions[agent_id] = agent_action
+        def my_single_update_world_color_map(row, col, char):
+            """Only update the color map. This is done separately when agents move, because their own
+            position state is not contained in self.world_map, but in their own Agent objects"""
+            my_world_map_color[row + self.map_padding, col + self.map_padding] = self.color_map[char]
+        # Remove agents from color map
+        for agent in myagents.values():
+            row, col = agent.pos[0], agent.pos[1]
+            my_single_update_world_color_map(row, col, my_world_map[row, col])
+        self.my_update_moves(agent_actions, myagents)
+
+
+
+        def my_single_update_map(row, col, char):
+            my_world_map[row, col] = char
+            my_world_map_color[row + self.map_padding, col + self.map_padding] = self.color_map[char]
+
+        for agent in myagents.values():
+            pos = agent.pos
+            new_char = agent.consume(my_world_map[pos[0], pos[1]])
+            my_single_update_map(pos[0], pos[1], new_char)
+
+        
+        def my_update_custom_moves(agent_actions):
+            """
+            This function executes non-movement actions like firing, cleaning etc.
+            The order in which agent actions are resolved is random to ensure homogeneity, similar to
+            update_moves, otherwise a race condition occurs which prioritizes lower-numbered agents
+            """
+            agent_ids = list(agent_actions.keys())
+            np.random.shuffle(agent_ids)
+            for agent_id in agent_ids:
+                action = agent_actions[agent_id]
+                # check its not a move based action
+                if "MOVE" not in action and "STAY" not in action and "TURN" not in action:
+                    agent = myagents[agent_id]
+                    updates = self.custom_action(agent, action)
+                    if len(updates) > 0:
+                        my_update_map(updates)
+
+        def my_update_map(new_points):
+            """For points in new_points, place desired char on the map
+            Update the color map as well"""
+            for point in new_points:
+                my_single_update_map(*point)
+
+
+
+        # execute custom moves like firing
+        my_update_custom_moves(agent_actions)
+
+        
+        def my_custom_map_update():
+            """See parent class"""
+            # spawn the apples
+            new_apples = my_spawn_apples()
+            my_update_map(new_apples)
+
+        def my_spawn_apples():
+            """Construct the apples spawned in this step.
+
+            Returns
+            -------
+            new_apple_points: list of 2-d lists
+                a list containing lists indicating the spawn positions of new apples
+            """
+
+            new_apple_points = []
+            agent_positions = self.my_agent_pos(myagents)
+            random_numbers = rand(len(self.apple_points))
+            r = 0
+            for i in range(len(self.apple_points)):
+                row, col = self.apple_points[i]
+                # apples can't spawn where agents are standing or where an apple already is
+                if [row, col] not in agent_positions and my_world_map[row, col] != b"A":
+
+                    spawn_prob = 0.1
+                    rand_num = random_numbers[r]
+                    r += 1
+                    if rand_num < spawn_prob:
+                        new_apple_points.append((row, col, b"A"))
+            return new_apple_points
+
+        # execute spawning events
+        my_custom_map_update()
+
+        
+        def my_get_map_with_agents():
+            """Gets a version of the environment map where generic
+            'P' characters have been replaced with specific agent IDs.
+
+            Returns:
+                2D array of strings representing the map.
+            """
+            grid = np.copy(my_world_map)
+
+            for agent in myagents.values():
+                char_id = agent.get_char_id()
+
+                # If agent is not within map, skip.
+                if not (0 <= agent.pos[0] < grid.shape[0] and 0 <= agent.pos[1] < grid.shape[1]):
+                    continue
+
+                grid[agent.pos[0], agent.pos[1]] = char_id
+
+            # beams should overlay agents
+            for beam_pos in my_beam_pos:
+                grid[beam_pos[0], beam_pos[1]] = beam_pos[2]
+
+            return grid
+
+        map_with_agents = my_get_map_with_agents()
+
+        
+
+
+        # Add agents to color map
+        for agent in myagents.values():
+            row, col = agent.pos[0], agent.pos[1]
+            # Firing beams have priority over agents and should cover them
+            if my_world_map[row, col] not in [b"F", b"C"]:
+                my_single_update_world_color_map(row, col, agent.get_char_id())
+        
+        def my_color_view(agent):
+            row, col = agent.pos[0], agent.pos[1]
+            view_slice = my_world_map_color[
+                row + self.map_padding - self.view_len : row + self.map_padding + self.view_len + 1,
+                col + self.map_padding - self.view_len : col + self.map_padding + self.view_len + 1,
+            ]
+            if agent.orientation == "UP":
+                rotated_view = view_slice
+            elif agent.orientation == "LEFT":
+                rotated_view = np.rot90(view_slice)
+            elif agent.orientation == "DOWN":
+                rotated_view = np.rot90(view_slice, k=2)
+            elif agent.orientation == "RIGHT":
+                rotated_view = np.rot90(view_slice, k=1, axes=(1, 0))
+            return rotated_view
+        
+        def my_find_visible_agents(agent_id):
+            """Returns all the agents that can be seen by agent with agent_id
+            Args
+            ----
+            agent_id: str
+                The id of the agent whose visible agents we are asking about
+            Returns
+            -------
+            visible_agents: list
+                which agents can be seen by the agent with id "agent_id"
+            """
+            agent_pos = myagents[agent_id].pos
+            upper_lim = int(agent_pos[0] + myagents[agent_id].row_size)
+            lower_lim = int(agent_pos[0] - myagents[agent_id].row_size)
+            left_lim = int(agent_pos[1] - myagents[agent_id].col_size)
+            right_lim = int(agent_pos[1] + myagents[agent_id].col_size)
+
+            # keep this sorted so the visibility matrix is always in order
+            other_agent_pos = [
+                myagents[other_agent_id].pos
+                for other_agent_id in sorted(myagents.keys())
+                if other_agent_id != agent_id
+            ]
+            return np.array(
+                [
+                    1
+                    if (lower_lim <= agent_tup[0] <= upper_lim and left_lim <= agent_tup[1] <= right_lim)
+                    else 0
+                    for agent_tup in other_agent_pos
+                ],
+                dtype=np.uint8,
+            )
+
+        
+        observations = {}
+        rewards = {}
+        dones = {}
+        infos = {}
+        for agent in myagents.values():
+            agent.full_map = map_with_agents
+            rgb_arr = my_color_view(agent)
+            # concatenate on the prev_actions to the observations
+            if self.return_agent_actions:
+                prev_actions = np.array(
+                    [actions[key] for key in sorted(actions.keys()) if key != agent.agent_id]
+                ).astype(np.uint8)
+                visible_agents = my_find_visible_agents(agent.agent_id)
+                observations[agent.agent_id] = {
+                    "curr_obs": rgb_arr,
+                    "other_agent_actions": prev_actions,
+                    "visible_agents": visible_agents,
+                    "prev_visible_agents": agent.prev_visible_agents,
+                }
+                agent.prev_visible_agents = visible_agents
+                
+
+            else:
+                observations[agent.agent_id] = {"curr_obs": rgb_arr}
+            rewards[agent.agent_id] = agent.compute_reward()
+            dones[agent.agent_id] = agent.get_done()
+            infos[agent.agent_id] = {}
+
+        if self.use_collective_reward:
+            collective_reward = sum(rewards.values())
+            for agent in rewards.keys():
+                rewards[agent] = collective_reward
+
+        dones["__all__"] = np.any(list(dones.values()))
+        return observations, rewards, dones, infos
+
+
+
+
+    def my_update_moves(self, agent_actions, myagents):
+        """Converts agent action tuples into a new map and new agent positions.
+         Also resolves conflicts over multiple agents wanting a cell.
+
+         This method works by finding all conflicts over a cell and randomly assigning them
+        to one of the agents that desires the slot. It then sets all of the other agents
+        that wanted the cell to have a move of staying. For moves that do not directly
+        conflict with another agent for a cell, but may not be temporarily resolvable
+        due to an agent currently being in the desired cell, we continually loop through
+        the actions until all moves have been satisfied or deemed impossible.
+        For example, agent 1 may want to move from [1,2] to [2,2] but agent 2 is in [2,2].
+        Agent 2, however, is moving into [3,2]. Agent-1's action is first in the order so at the
+        first pass it is skipped but agent-2 moves to [3,2]. In the second pass, agent-1 will
+        then be able to move into [2,2].
+
+         Parameters
+         ----------
+         agent_actions: dict
+             dict with agent_id as key and action as value
+        """
+
+        reserved_slots = []
+        for agent_id, action in agent_actions.items():
+            agent = myagents[agent_id]
+            selected_action = self.all_actions[action]
+            # TODO(ev) these two parts of the actions
+            if "MOVE" in action or "STAY" in action:
+                # rotate the selected action appropriately
+                rot_action = self.rotate_action(selected_action, agent.get_orientation())
+                new_pos = agent.pos + rot_action
+                # allow the agents to confirm what position they can move to
+                new_pos = agent.return_valid_pos(new_pos)
+                reserved_slots.append((*new_pos, b"P", agent_id))
+            elif "TURN" in action:
+                new_rot = self.update_rotation(action, agent.get_orientation())
+                agent.update_agent_rot(new_rot)
+
+        # now do the conflict resolution part of the process
+
+        # helpful for finding the agent in the conflicting slot
+        agent_by_pos = {tuple(agent.pos): agent.agent_id for agent in myagents.values()}
+
+        # agent moves keyed by ids
+        agent_moves = {}
+
+        # lists of moves and their corresponding agents
+        move_slots = []
+        agent_to_slot = []
+
+        for slot in reserved_slots:
+            row, col = slot[0], slot[1]
+            if slot[2] == b"P":
+                agent_id = slot[3]
+                agent_moves[agent_id] = [row, col]
+                move_slots.append([row, col])
+                agent_to_slot.append(agent_id)
+
+        # cut short the computation if there are no moves
+        if len(agent_to_slot) > 0:
+
+            # first we will resolve all slots over which multiple agents
+            # want the slot
+
+            # shuffle so that a random agent has slot priority
+            shuffle_list = list(zip(agent_to_slot, move_slots))
+            np.random.shuffle(shuffle_list)
+            agent_to_slot, move_slots = zip(*shuffle_list)
+            unique_move, indices, return_count = np.unique(
+                move_slots, return_index=True, return_counts=True, axis=0
+            )
+            search_list = np.array(move_slots)
+
+            # first go through and remove moves that can't possible happen. Three types
+            # 1. Trying to move into an agent that has been issued a stay command
+            # 2. Trying to move into the spot of an agent that doesn't have a move
+            # 3. Two agents trying to walk through one another
+
+            # Resolve all conflicts over a space
+            if np.any(return_count > 1):
+                for move, index, count in zip(unique_move, indices, return_count):
+                    if count > 1:
+                        # check that the cell you are fighting over doesn't currently
+                        # contain an agent that isn't going to move for one of the agents
+                        # If it does, all the agents commands should become STAY
+                        # since no moving will be possible
+                        conflict_indices = np.where((search_list == move).all(axis=1))[0]
+                        all_agents_id = [agent_to_slot[i] for i in conflict_indices]
+                        # all other agents now stay in place so update their moves
+                        # to reflect this
+                        conflict_cell_free = True
+                        for agent_id in all_agents_id:
+                            moves_copy = agent_moves.copy()
+                            # TODO(ev) code duplication, simplify
+                            if move.tolist() in self.my_agent_pos(myagents):
+                                # find the agent that is currently at that spot and make sure
+                                # that the move is possible. If it won't be, remove it.
+                                conflicting_agent_id = agent_by_pos[tuple(move)]
+                                curr_pos = myagents[agent_id].pos.tolist()
+                                curr_conflict_pos = myagents[conflicting_agent_id].pos.tolist()
+                                conflict_move = agent_moves.get(
+                                    conflicting_agent_id, curr_conflict_pos
+                                )
+                                # Condition (1):
+                                # a STAY command has been issued
+                                if agent_id == conflicting_agent_id:
+                                    conflict_cell_free = False
+                                # Condition (2)
+                                # its command is to stay
+                                # or you are trying to move into an agent that hasn't
+                                # received a command
+                                elif (
+                                    conflicting_agent_id not in moves_copy.keys()
+                                    or curr_conflict_pos == conflict_move
+                                ):
+                                    conflict_cell_free = False
+
+                                # Condition (3)
+                                # It is trying to move into you and you are moving into it
+                                elif conflicting_agent_id in moves_copy.keys():
+                                    if (
+                                        agent_moves[conflicting_agent_id] == curr_pos
+                                        and move.tolist()
+                                        == myagents[conflicting_agent_id].pos.tolist()
+                                    ):
+                                        conflict_cell_free = False
+
+                        # if the conflict cell is open, let one of the conflicting agents
+                        # move into it
+                        if conflict_cell_free:
+                            myagents[agent_to_slot[index]].update_agent_pos(move)
+                            agent_by_pos = {
+                                tuple(agent.pos): agent.agent_id for agent in myagents.values()
+                            }
+                        # ------------------------------------
+                        # remove all the other moves that would have conflicted
+                        remove_indices = np.where((search_list == move).all(axis=1))[0]
+                        all_agents_id = [agent_to_slot[i] for i in remove_indices]
+                        # all other agents now stay in place so update their moves
+                        # to stay in place
+                        for agent_id in all_agents_id:
+                            agent_moves[agent_id] = myagents[agent_id].pos.tolist()
+
+            # make the remaining un-conflicted moves
+            while len(agent_moves.items()) > 0:
+                agent_by_pos = {tuple(agent.pos): agent.agent_id for agent in myagents.values()}
+                num_moves = len(agent_moves.items())
+                moves_copy = agent_moves.copy()
+                del_keys = []
+                for agent_id, move in moves_copy.items():
+                    if agent_id in del_keys:
+                        continue
+                    if move in self.my_agent_pos(myagents):
+                        # find the agent that is currently at that spot and make sure
+                        # that the move is possible. If it won't be, remove it.
+                        conflicting_agent_id = agent_by_pos[tuple(move)]
+                        curr_pos = myagents[agent_id].pos.tolist()
+                        curr_conflict_pos = myagents[conflicting_agent_id].pos.tolist()
+                        conflict_move = agent_moves.get(conflicting_agent_id, curr_conflict_pos)
+                        # Condition (1):
+                        # a STAY command has been issued
+                        if agent_id == conflicting_agent_id:
+                            del agent_moves[agent_id]
+                            del_keys.append(agent_id)
+                        # Condition (2)
+                        # its command is to stay
+                        # or you are trying to move into an agent that hasn't received a command
+                        elif (
+                            conflicting_agent_id not in moves_copy.keys()
+                            or curr_conflict_pos == conflict_move
+                        ):
+                            del agent_moves[agent_id]
+                            del_keys.append(agent_id)
+                        # Condition (3)
+                        # It is trying to move into you and you are moving into it
+                        elif conflicting_agent_id in moves_copy.keys():
+                            if (
+                                agent_moves[conflicting_agent_id] == curr_pos
+                                and move == myagents[conflicting_agent_id].pos.tolist()
+                            ):
+                                del agent_moves[conflicting_agent_id]
+                                del agent_moves[agent_id]
+                                del_keys.append(agent_id)
+                                del_keys.append(conflicting_agent_id)
+                    # this move is unconflicted so go ahead and move
+                    else:
+                        myagents[agent_id].update_agent_pos(move)
+                        del agent_moves[agent_id]
+                        del_keys.append(agent_id)
+
+                # no agent is able to move freely, so just move them all
+                # no updates to hidden cells are needed since all the
+                # same cells will be covered
+                if len(agent_moves) == num_moves:
+                    for agent_id, move in agent_moves.items():
+                        myagents[agent_id].update_agent_pos(move)
+                    break
+
+    
+    def my_agent_pos(self, myagents):
+        return [agent.pos.tolist() for agent in myagents.values()]
+
+
+##################################################################################################################################################################
 
     def reset(self):
         """Reset the environment.
@@ -658,6 +1111,8 @@ class MapEnv():
                     for agent_id, move in agent_moves.items():
                         self.agents[agent_id].update_agent_pos(move)
                     break
+
+    
 
     def update_custom_moves(self, agent_actions):
         """

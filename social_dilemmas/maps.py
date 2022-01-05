@@ -67,10 +67,9 @@ TRAPPED_BOX_MAP = [
 
 TRAPPED_BOX_MAP2 = [
     "@@@@@@@@@",
-    "@       @",
-    "@    A  @",
-    "@       @",
-    "@ P     @",
+    "@PPPPPPP@",
+    "@PPPPPPP@",
+    "@PPPPPPP@",
     "@@@@@@@@@",
 ]
 

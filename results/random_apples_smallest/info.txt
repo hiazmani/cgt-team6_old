@@ -1,0 +1,1 @@
+used learning rate: 0.0001

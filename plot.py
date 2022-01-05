@@ -2,9 +2,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("./trappedBox12k.csv")
+df = pd.read_csv("./results/old_results/trappedBox12k.csv")
 
-window = 200
+window = 10
 
 episodes = df['Episodes'].to_numpy()
 rewards = df['Rewards'].to_numpy()

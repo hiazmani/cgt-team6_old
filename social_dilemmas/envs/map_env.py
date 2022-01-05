@@ -312,17 +312,17 @@ class MapEnv():
         info: dict to pass extra info to gym
         """
         
-        # my_beam_pos = []
-        # myagents = copy.deepcopy(self.agents)
-        # my_world_map = copy.deepcopy(self.world_map)
-        # my_world_map_color = copy.deepcopy(self.world_map_color)
+        my_beam_pos = []
+        myagents = copy.deepcopy(self.agents)
+        my_world_map = copy.deepcopy(self.world_map)
+        my_world_map_color = copy.deepcopy(self.world_map_color)
 
 
-        self.beam_pos = []
-        my_beam_pos = self.beam_pos
-        myagents = self.agents
-        my_world_map = self.world_map
-        my_world_map_color = self.world_map_color
+        # self.beam_pos = []
+        # my_beam_pos = self.beam_pos
+        # myagents = self.agents
+        # my_world_map = self.world_map
+        # my_world_map_color = self.world_map_color
 
         agent_actions = {}
         for agent_id, action in actions.items():
@@ -1267,8 +1267,9 @@ class MapEnv():
 
     def spawn_rotation(self):
         """Return a randomly selected initial rotation for an agent"""
-        rand_int = np.random.randint(len(ORIENTATIONS.keys()))
-        return list(ORIENTATIONS.keys())[rand_int]
+        # rand_int = np.random.randint(len(ORIENTATIONS.keys()))
+        # default_rot = ORIENTATIONS.keys()[2]
+        return list(ORIENTATIONS.keys())[2]
 
     def build_walls(self):
         for i in range(len(self.wall_points)):

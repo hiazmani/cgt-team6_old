@@ -80,7 +80,7 @@ class A2CAgent:
         return np.random.choice(self.action_size, 1, p=policy)[0]
 
     # update policy network every episode
-    def train_model(self, state, action, reward, next_state, done):
+    def train_model(self, step, state, action, reward, next_state, done):
         target = np.zeros((1, self.value_size))
         advantages = np.zeros((1, self.action_size))
 
@@ -91,15 +91,15 @@ class A2CAgent:
             advantages[0][action] = reward - value
             target[0][0] = reward
         else:
-            advantages[0][action] = reward + self.discount_factor * (next_value) - value
-            target[0][0] = reward + self.discount_factor * next_value
+            advantages[0][action] = reward + (self.discount_factor ** step) * (next_value) - value
+            target[0][0] = reward + (self.discount_factor ** step) * next_value
 
         self.actor.fit(state, advantages, epochs=1, verbose=0)
         self.critic.fit(state, target, epochs=1, verbose=0)
 
-    def save(self):
-        self.actor.save_weights("./model/a2c_actor.h5")
-        self.critic.save_weights("./model/a2c_critic.h5")
+    # def save(self):
+    #     self.actor.save_weights("./model/a2c_actor.h5")
+    #     self.critic.save_weights("./model/a2c_critic.h5")
 
 
 if __name__ == "__main__":

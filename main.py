@@ -1,8 +1,8 @@
-from social_dilemmas_copy.envs import env_creator
-from social_dilemmas_copy.envs.cleanup import CleanupEnv
-from social_dilemmas_copy.envs.harvest import HarvestEnv
-from social_dilemmas_copy.envs.switch import SwitchEnv
-from social_dilemmas_copy.envs.agent import BASE_ACTIONS, CLEANUP_ACTIONS, HARVEST_ACTIONS, TRAPPED_ACTIONS, APPLE_ACTIONS
+from social_dilemmas.envs import env_creator
+from social_dilemmas.envs.cleanup import CleanupEnv
+from social_dilemmas.envs.harvest import HarvestEnv
+from social_dilemmas.envs.switch import SwitchEnv
+from social_dilemmas.envs.agent import BASE_ACTIONS, CLEANUP_ACTIONS, HARVEST_ACTIONS, TRAPPED_ACTIONS, APPLE_ACTIONS
 import argparse
 import time
 import matplotlib.pyplot as plt
@@ -13,15 +13,16 @@ import pandas as pd
 
 from collections import deque
 
-from social_dilemmas_copy.envs.trapped_box import TrappedBoxEnv
-from social_dilemmas_copy.envs.apple_learning import AppleLearningEnv
+from social_dilemmas.envs.trapped_box import TrappedBoxEnv
+from social_dilemmas.envs.apple_learning import AppleLearningEnv
+from social_dilemmas.envs.agent import TRAPPED_ACTIONS
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 # Parameters from social influences paper
 gamma = 0.99
-n_agents = 2
+n_agents = 1
 n_actions = len(BASE_ACTIONS)  # amount of actions
 #{0: 'MOVE_LEFT', 1: 'MOVE_RIGHT', 2: 'MOVE_UP', 3: 'MOVE_DOWN', 4: 'STAY', 5: 'TURN_CLOCKWISE', 6: 'TURN_COUNTERCLOCKWISE', 7: 'FIRE', 8: 'CLEAN'}
 kernel_size = 3
@@ -64,10 +65,10 @@ from random import randrange
 import os
 import glob
 
-files = glob.glob('/home/liguedino/Documents/github/project_comp_game_theory/images/*')
-for f in files:
+# files = glob.glob('/home/liguedino/Documents/github/project_comp_game_theory/images/*')
+# for f in files:
     # print(f"Image: {f}")
-    os.remove(f)
+    # os.remove(f)
 
 
 ##---------------##
@@ -103,7 +104,7 @@ for episode in range(n_episodes):
         if stepDone:
             break
         # if step == 0:
-            # env.render(f"images/{str(episode).zfill(10)}-{str(step).zfill(10)}.png")
+        #     env.render(f"images/{str(episode).zfill(10)}.png")
         curr_actions = {}
         for agentKey, agentObject in A2C_agents.items():
             queue = agentQueus[agentKey]
@@ -137,20 +138,20 @@ for episode in range(n_episodes):
             allstates = tf.concat([x for x in queue], 0)
             allstates = np.reshape(allstates, [1, 1, 15, 15, 3])
 
-            agentObject.train_model(prev_states, action, reward, allstates, done)
+            agentObject.train_model(step, prev_states, action, reward, allstates, done)
 
     episode_length[episode] = step
     episode_rewards[episode] = cum_rew
 
     print(f"[{episode}] Episode rewards: {cum_rew} after {step+1} steps")
-    for agentKey, agentObject in A2C_agents.items():
-        agentObject.save()   
+    # for agentKey, agentObject in A2C_agents.items():
+    #     agentObject.save()   
 
 
 
-d = {'Episodes': np.array(range(len(episode_rewards))), 'Rewards': episode_rewards}
+d = {'Episodes': np.array(range(len(episode_rewards))), "AmountOfSteps": episode_length, 'Rewards': episode_rewards}
 df = pd.DataFrame(d)
-df.to_csv('trappedBox12k.csv', index=False)
+df.to_csv('trappedBoxTest.csv', index=False)
 
 print(f"Finished 12.000 episodes")
 print(f"All rewards: {episode_rewards}")
